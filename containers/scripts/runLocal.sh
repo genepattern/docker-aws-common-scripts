@@ -47,14 +47,14 @@ do
     ls -alrt $GP_LOCAL_PREFIX${GP_MOUNT_POINT_ARRAY[i]}
 done
 WALLTIME_UNIT="s"
-echo "CONTAINER RUN IS docker run -d   --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR -t $GP_JOB_DOCKER_IMAGE sleep ${GP_JOB_WALLTIME_SEC}${WALLTIME_UNIT} "
+echo "CONTAINER RUN IS docker run -d   --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR --entrypoint ""  -t $GP_JOB_DOCKER_IMAGE sleep ${GP_JOB_WALLTIME_SEC}${WALLTIME_UNIT} "
 
 #
 # test if this container uses 'sleep #s' or 'sleep #' without the 's' then launch with the approriate call
 # the docker-r-seurat-scripts container used BuildRoot 2014.02 which fails on the sleep command if an s is present
 # Note this will still fail if we get a non-unix container
 #
-docker run  --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR -t $GP_JOB_DOCKER_IMAGE sleep 0s 
+docker run  --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR --entrypoint "" -t $GP_JOB_DOCKER_IMAGE sleep 0s 
 
 if [ $? -ne 0  ];
 then
