@@ -120,5 +120,6 @@ echo "Saving to ECR "
 # but not for now
 echo "=========== removing all exited containers =============="
 docker ps -aq --no-trunc -f status=exited | xargs docker rm
-
+# and remove downloaded images to keep them from piling up
+docker image prune -a -f
 

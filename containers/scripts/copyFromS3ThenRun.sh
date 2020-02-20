@@ -28,6 +28,8 @@ AWS_S3_PREFIX="$(echo -e "${AWS_S3_PREFIX}" | tr -d '[:space:]')"
 GP_JOB_WORKING_DIR="$(echo -e "${GP_JOB_WORKING_DIR}" | tr -d '[:space:]')"
 GP_JOB_DOCKER_IMAGE="$(echo -e "${GP_JOB_DOCKER_IMAGE}" | tr -d '[:space:]')"
 GP_MODULE_DIR="$(echo -e "${GP_MODULE_DIR}" | tr -d '[:space:]')"
+GP_USER_ID="$(echo -e "${GP_USER_ID}" | tr -d '[:space:]')"
+
 
 # also expect
 #    GP_MODULE_NAME
@@ -168,8 +170,11 @@ aws s3 sync  $GP_LOCAL_PREFIX/$GP_JOB_METADATA_DIR $AWS_S3_PREFIX$GP_JOB_METADAT
 #     aws s3 sync $AWS_S3_PREFIX${GP_S3_RETURN_POINT_ARRAY[i]}  $GP_LOCAL_PREFIX${GP_S3_RETURN_POINT_ARRAY[i]}
 #done
 
+# Delete files used as input that come from the user's home directory (but not stuff in tasklib or resources
+# to minimize what an attacking malicious container could ever possibly see on the compute node
+python /usr/local/bin/deletePrivateInputs.py $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME $GP_USER_ID $GP_LOCAL_PREFIX
+
 # Delete the JobResults and metadata dirs now that they have sync'd back
-# TBD: also remove input files from user dir
 echo "=========7.  Removing Job and metadata directories"
 rm -rf $GP_LOCAL_PREFIX/$GP_JOB_WORKING_DIR
 rm -rf $GP_LOCAL_PREFIX/$GP_JOB_METADATA_DIR
