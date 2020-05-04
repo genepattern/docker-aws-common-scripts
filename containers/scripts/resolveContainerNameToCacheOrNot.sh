@@ -31,15 +31,32 @@ then
    if [ $GP_JOB_CONTAINER_DONT_USE_CACHE ]; then
       echo "ECR Caching disabled"
       CONTAINER_TO_USE=$GP_JOB_DOCKER_IMAGE
-      docker pull $GP_JOB_DOCKER_IMAGE
+      docker pull $GP_JOB_DOCKER_IMAGE >>$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/dockerout.log 2>>$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/dockererr.log
+      exit_code=$?
+      echo "{ \"exit_code\": $exit_code }" >> $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/docker_exit_code.txt
+      echo "DOCKER PULL EXIT CODE IS $exit_code"
+      if [ $exit_code -ne 0 ]; then
+         echo "Problem pulling container. ${GP_LOCAL_PREFIX}${GP_JOB_METADATA_DIR}/dockererr.log"
+         echo "$(cat ${GP_LOCAL_PREFIX}${GP_JOB_METADATA_DIR}/dockererr.log)"
+         return $exit_code
+      fi
+
+
    else 
        echo "========== USING ECR CACHED CONTAINER ================="
        # pull the ECR container
-       docker pull $AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/${CONTAINER_NAME}:$LATEST_TAG
+       docker pull $AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/${CONTAINER_NAME}:$LATEST_TAG >>$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/dockerout.log 2>>$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/dockererr.log
 
        # tell the local docker that  this container is that container
        docker tag $AWS_ACCOUNT.dkr.ecr.us-east-1.amazonaws.com/${CONTAINER_NAME}:$LATEST_TAG $GP_JOB_DOCKER_IMAGE
-       #exit
+       exit_code=$?
+       echo "{ \"exit_code\": $exit_code }" >> $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/docker_exit_code.txt
+       echo "DOCKER PULL EXIT CODE IS $exit_code"
+       if [ $exit_code -ne 0 ]; then
+          echo "Problem pulling container"
+          echo "$(cat ${GP_LOCAL_PREFIX}${GP_JOB_METADATA_DIR}/dockererr.log)"
+          return $exit_code
+       fi
    fi
 else
    echo " == Pulling $GP_JOB_DOCKER_IMAGE from dockerhub "

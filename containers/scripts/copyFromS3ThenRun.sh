@@ -46,6 +46,7 @@ GP_USER_ID="$(echo -e "${GP_USER_ID}" | tr -d '[:space:]')"
 : ${EXITCODE_FILENAME=$GP_JOB_METADATA_DIR/exit_code.txt}
 : ${GP_JOB_WALLTIME_SEC="86400"}
 
+: ${DEBUG_LEVEL=0}
 
 # now strip any spaces that are present of either end
 GP_JOB_METADATA_DIR="$(echo -e "${GP_JOB_METADATA_DIR}" | tr -d '[:space:]')"
@@ -64,6 +65,7 @@ if [ "xGP_MODULE_SPECIFIC_CONTAINER" = "x" ]; then
     echo "== no MODULE_SPECIFIC_CONTAINER specified. No caching of the container will be done at the end of the run "
 fi
 
+if [ $DEBUG_LEVEL -gt 0  ]; then
 ###### print out the environment for later debugging	
 # Loop over each line from the env command
 # add the test to make it easier to search cloudwatch logs
@@ -76,18 +78,10 @@ while read -r line; do
 done <<EOF
 $(env)
 EOF
+fi
+
 
 ############################   finished getting all inputs ################################
-
-# this we create by splitting the mount points that are provided delimited with a colon
-#GP_MOUNT_POINT_ARRAY=(${GP_JOB_DOCKER_BIND_MOUNTS//:/ })
-#echo "Mount points for the containers are:"
-#for i in "${!GP_MOUNT_POINT_ARRAY[@]}"
-#do
-#    echo "    $i=>${GP_MOUNT_POINT_ARRAY[i]}"
-#done
-
-# make a directory into which we will S3 sync everything we have had passed in to the 'outer' container
 # this will NOT be at the same path as on the GP head node and the compute node, but it will be mounted to the
 # inner container using the same path as on the head node
 #
@@ -131,26 +125,14 @@ fi
 ###################### END TBD: load cached libraries for R modules ##########################
 
 . $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME
-# RUN Peter's file for additional S3 fetches
-#if [ -f "$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME" ]
-#then
-#    echo "==========  4. Running Peter's s3 script =========="
-#    . $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME
-#    $GP_AWS_SYNC_SCRIPT_NAME_HOLD=aws-sync-from-s3.sh.hold
-#
-#    echo mv $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME_HOLD
-#    mv $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME_HOLD
-#    echo "# stubbed out to prevent call from inside inner container" > $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME
-#    chmod a+x $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME
-#    echo "==========  Stubbed out S3 script =========="
-#fi
 
-#synchDir.sh 30s $GP_LOCAL_PREFIX$GP_JOB_WORKING_DIR $AWS_S3_PREFIX$GP_JOB_WORKING_DIR &
 synchDir.sh 30s $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR $AWS_S3_PREFIX$GP_JOB_METADATA_DIR &
 
 echo "========== S3 copies in complete, DEBUG inside 1st container ================="
 
 . /usr/local/bin/runLocal.sh $@
+exit_code=$?
+
 
 echo "========== END RUNNING Module, copy back from S3  ================="
 
@@ -163,12 +145,6 @@ aws s3 sync $GP_LOCAL_PREFIX/$GP_JOB_WORKING_DIR $AWS_S3_PREFIX$GP_JOB_WORKING_D
 echo "========== 6. PERFORMING aws s3 sync  $GP_LOCAL_PREFIX/$GP_JOB_METADATA_DIR $AWS_S3_PREFIX$GP_JOB_METADATA_DIR"
 aws s3 sync  $GP_LOCAL_PREFIX/$GP_JOB_METADATA_DIR $AWS_S3_PREFIX$GP_JOB_METADATA_DIR --quiet
 
-# save other return points that were passed in by GenePattern
-#GP_S3_RETURN_POINT_ARRAY=(${GP_S3_RETURN_POINTS//:/ })
-#for i in "${!GP_S3_RETURN_POINT_ARRAY[@]}"
-#do
-#     aws s3 sync $AWS_S3_PREFIX${GP_S3_RETURN_POINT_ARRAY[i]}  $GP_LOCAL_PREFIX${GP_S3_RETURN_POINT_ARRAY[i]}
-#done
 
 # Delete files used as input that come from the user's home directory (but not stuff in tasklib or resources
 # to minimize what an attacking malicious container could ever possibly see on the compute node
@@ -179,5 +155,5 @@ echo "=========7.  Removing Job and metadata directories"
 rm -rf $GP_LOCAL_PREFIX/$GP_JOB_WORKING_DIR
 rm -rf $GP_LOCAL_PREFIX/$GP_JOB_METADATA_DIR
 
-
+exit $exit_code
 
