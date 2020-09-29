@@ -1,5 +1,5 @@
 #!/bin/bash
-#
+#  
 # &copy; 2017-2018 Regents of the University of California and the Broad Institute. All rights reserved.
 #
 : ${GP_MODULE_EXEC=$GP_JOB_METADATA_DIR/exec.sh}
