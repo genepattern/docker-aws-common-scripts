@@ -1,5 +1,5 @@
 
-FROM docker:18.09.9-dind
+FROM docker:19.03.6-dind
 
 COPY scripts/*.sh /usr/local/bin/
 COPY scripts/*.py /usr/local/bin/
