@@ -36,13 +36,37 @@ if [ $DEBUG_LEVEL -gt 0  ]; then
     do
         echo "Mount    $i=>${GP_MOUNT_POINT_ARRAY[i]}"
     done
+    echo "GP_JOB_METADATA_DIR = ==$GP_JOB_METADATA_DIR =="
+    echo "GP_JOB_MODULE_DIR == $GP_JOB_MODULE_DIR =="
+    echo "GP_WORKING_DIR = == $GP_WORKING_DIR =="
+
+
 fi
 
 MOUNT_STR="  "
 for i in "${!GP_MOUNT_POINT_ARRAY[@]}"
 do
-    A_MOUNT=" --mount type=bind,src=$GP_LOCAL_PREFIX${GP_MOUNT_POINT_ARRAY[i]},dst=${GP_MOUNT_POINT_ARRAY[i]} "
-    MOUNT_STR=$MOUNT_STR$A_MOUNT
+    RW_FLAG="  "
+    A_MOUNT=" --mount type=bind,src=$GP_LOCAL_PREFIX${GP_MOUNT_POINT_ARRAY[i]},dst=${GP_MOUNT_POINT_ARRAY[i]}"
+
+    #
+    # job dir, metadata dir have to be read/write.  TaskLib is writable for some modules so allow it too
+    # everything else is readonly when GP_READONLY_BIND_MOUNTS is set to true
+    #
+    if [ ${GP_READONLY_BIND_MOUNTS,,} = "true"   ]; then
+        THE_DIR="${GP_MOUNT_POINT_ARRAY[i]}"
+        if [ ${THE_DIR} == "$GP_JOB_METADATA_DIR"  ]; then
+            RW_FLAG="  "
+        elif [ "$THE_DIR" == "$GP_JOB_MODULE_DIR"  ]; then
+            RW_FLAG="  "
+        elif [ "$THE_DIR" == "$GP_WORKING_DIR"  ]; then
+            RW_FLAG="  "
+        else 
+            RW_FLAG=",readonly  "
+        fi
+    fi
+
+    MOUNT_STR=$MOUNT_STR$A_MOUNT$RW_FLAG
     # make sure the mounts are rwx for whatever user is inside the container, not ideal but a workaround for now
     chmod -R a+rwx $GP_LOCAL_PREFIX${GP_MOUNT_POINT_ARRAY[i]}
     if [ $DEBUG_LEVEL -gt 0  ]; then
@@ -83,6 +107,24 @@ then
    echo "b. Failed to launch container sleep, exiting"
    exit 999
 fi
+
+if docker exec -t $CONTAINER_ID id | grep root
+then
+    # container is running as root by default.
+    # create a new user in it if we can and use that user for the next steps
+    echo "===================  I am Groot! (I mean the module container $GP_JOB_DOCKER_IMAGE is running as user root by default) "
+    # case insensitive compare of the variable
+    if [ ${GP_CONTAINER_CANT_RUN_AS_ROOT,,} = "true"   ]
+    then
+        echo "Stopping execution because default user in container $GP_JOB_DOCKER_IMAGE is root.  Execution may be unsafe." >>$GP_LOCAL_PREFIX$STDERR_FILENAME 2>&1
+        return
+    fi
+else
+
+    echo "CONTAINER IS NOT RUNNING AS ROOT (Groot)!"
+fi
+
+
 
 # the GP_MODULE_DIR and MOD_LIBS are handled different so that it gets captured in the saved image
 

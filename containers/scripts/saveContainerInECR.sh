@@ -1,5 +1,5 @@
 #!/bin/sh
-env
+#/env
 
 if [ "x$GP_MODULE_SPECIFIC_CONTAINER" = "x" ]; then
     # Variable is empty
