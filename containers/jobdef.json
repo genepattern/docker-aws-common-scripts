@@ -1,7 +1,7 @@
 {
     "jobDefinitionName": "S3ModuleWrapper",
-    "jobDefinitionArn": "arn:aws:batch:us-east-1:718039241689:job-definition/S3ModuleWrapper:3",
-    "revision": 3,
+    "jobDefinitionArn": "arn:aws:batch:us-east-1:718039241689:job-definition/S3ModuleWrapper:20",
+    "revision": 20,
     "status": "ACTIVE",
     "type": "container",
     "parameters": {
@@ -11,35 +11,53 @@
         "working_dir": "job1_X",
         "taskLib": "src"
     },
+    "retryStrategy": {
+        "attempts": 1,
+        "evaluateOnExit": []
+    },
     "containerProperties": {
-        "image": "liefeld/dind",
-        "vcpus": 1,
-        "memory": 200,
+        "image": "genepattern/dind:0.8",
+        "vcpus": 2,
+        "memory": 300,
         "command": [
-            "/usr/local/bin/copyFromS3ThenRun.sh",
-            "Ref::taskLib",
-            "Ref::inputFileDirectory",
-            "Ref::s3_root",
-            "Ref::working_dir",
-            "Ref::exe1"
+            "/usr/local/bin/copyFromS3ThenRun.sh"
         ],
-        "jobRoleArn": "arn:aws:iam::718039241689:role/BATCH-EFS-ROLE",
+        "jobRoleArn": "arn:aws:iam::718039241689:role/Batch-restricted",
         "volumes": [
             {
                 "host": {
                     "sourcePath": "/var/run"
                 },
                 "name": "RUN"
+            },
+            {
+                "host": {
+                    "sourcePath": "/local"
+                },
+                "name": "LOCAL"
             }
         ],
-        "environment": [],
+        "environment": [
+            {
+                "name": "GP_JOB_CONTAINER_DONT_USE_CACHE",
+                "value": "TRUE"
+            }
+        ],
         "mountPoints": [
             {
                 "containerPath": "/var/run",
                 "readOnly": false,
                 "sourceVolume": "RUN"
+            },
+            {
+                "containerPath": "/local",
+                "readOnly": false,
+                "sourceVolume": "LOCAL"
             }
         ],
-        "ulimits": []
-    }
+        "ulimits": [],
+        "resourceRequirements": [],
+        "secrets": []
+    },
+    "tags": {}
 }
