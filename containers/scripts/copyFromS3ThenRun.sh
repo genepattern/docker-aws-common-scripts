@@ -103,7 +103,7 @@ aws s3 sync $AWS_S3_PREFIX$GP_JOB_METADATA_DIR $GP_LOCAL_PREFIX$GP_JOB_METADATA_
 
 # make sure scripts in metadata dir are executable
 echo "========== 2. chmodding $GP_JOB_METADATA_DIR from $PWD"
-chmod a+rwx $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/*
+chmod -R a+rwx $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR
 
 
 ###################### TBD: load cached libraries for R modules ##########################

@@ -1,8 +1,5 @@
 {
     "jobDefinitionName": "S3ModuleWrapper",
-    "jobDefinitionArn": "arn:aws:batch:us-east-1:718039241689:job-definition/S3ModuleWrapper:20",
-    "revision": 20,
-    "status": "ACTIVE",
     "type": "container",
     "parameters": {
         "exe1": "-u",
@@ -12,8 +9,7 @@
         "taskLib": "src"
     },
     "retryStrategy": {
-        "attempts": 1,
-        "evaluateOnExit": []
+        "attempts": 1
     },
     "containerProperties": {
         "image": "genepattern/dind:0.8",
@@ -22,7 +18,7 @@
         "command": [
             "/usr/local/bin/copyFromS3ThenRun.sh"
         ],
-        "jobRoleArn": "arn:aws:iam::718039241689:role/Batch-restricted",
+        "jobRoleArn": "arn:aws:iam::963173085540:role/BatchRestricted",
         "volumes": [
             {
                 "host": {
@@ -58,6 +54,5 @@
         "ulimits": [],
         "resourceRequirements": [],
         "secrets": []
-    },
-    "tags": {}
+    }
 }
