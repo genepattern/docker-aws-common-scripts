@@ -15,7 +15,7 @@ CONTAINER_VERSION=1
 PROFILE=""
 
 AWS_ACCOUNT="`python /usr/local/bin/get_aws_account.py`"
-echo " == found AWS account ID = $AWS_ACCOUNT "
+# echo " == found AWS account ID = $AWS_ACCOUNT "
 
 aws --region us-east-1 ecr describe-images --repository-name $CONTAINER_NAME  > repo.json
 if [ -s repo.json ];
@@ -61,7 +61,7 @@ then
 else
    echo " == Pulling $GP_JOB_DOCKER_IMAGE from dockerhub "
    CONTAINER_TO_USE=$GP_JOB_DOCKER_IMAGE
-   docker pull $GP_JOB_DOCKER_IMAGE
+   docker pull -q $GP_JOB_DOCKER_IMAGE
 fi
 
 echo "{ \"container_used\": $CONTAINER_TO_USE }" >> $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/docker_container_used.json

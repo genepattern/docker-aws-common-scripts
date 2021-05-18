@@ -1,10 +1,6 @@
 
 FROM docker:19.03.6-dind
 
-COPY scripts/*.sh /usr/local/bin/
-COPY scripts/*.py /usr/local/bin/
-COPY scripts/*.R /usr/local/bin/
-
 RUN apk update && \
     apk -v --no-cache add \
         bash=5.0.11-r1 \
@@ -21,4 +17,7 @@ RUN apk update && \
     chmod ugo+x /usr/local/bin/*.sh
 
    
+COPY scripts/*.sh /usr/local/bin/
+COPY scripts/*.py /usr/local/bin/
+COPY scripts/*.R /usr/local/bin/
 
