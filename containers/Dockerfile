@@ -1,20 +1,17 @@
 
-FROM docker:19.03.6-dind
+FROM docker:25.0.5-dind
 
 RUN apk update && \
     apk -v --no-cache add \
-        bash=5.0.11-r1 \
-        python=2.7.18-r0 \
-        py2-pip=18.1-r0 \
-        groff=1.22.4-r0 \
-        less=551-r0 \
-        mailcap=2.1.48-r0 \
-        && \
-    pip install --upgrade awscli==1.18.147 python-magic==0.4.18 && \
-    pip install boto3==1.15.15 && \
-    apk -v --purge del py-pip && \
-    rm /var/cache/apk/* && \
-    chmod ugo+x /usr/local/bin/*.sh
+        groff \
+        less \
+        mailcap \
+        python3 py3-pip
+
+RUN apk add --no-cache aws-cli
+RUN apk add py3-boto3 bash
+
+RUN  chmod ugo+x /usr/local/bin/*.sh
 
    
 COPY scripts/*.sh /usr/local/bin/

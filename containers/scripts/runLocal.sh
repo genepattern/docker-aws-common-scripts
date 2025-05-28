@@ -92,16 +92,16 @@ export CONTAINER_NAME="GP_${GP_JOB_ID}"
 # the docker-r-seurat-scripts container used BuildRoot 2014.02 which fails on the sleep command if an s is present
 # Note this will still fail if we get a non-unix container
 #
-docker run  --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR --entrypoint "" -t $GP_JOB_DOCKER_IMAGE  sleep 0s 
+docker run  --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR --runtime=nvidia  -t $GP_JOB_DOCKER_IMAGE  sleep 0s 
 
 exit_code=$?
 
 if [ $exit_code -ne 0  ];
 then
    echo "sleep failed, retry without the 's'"
-   CONTAINER_ID="`docker run -d --name $CONTAINER_NAME --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR -t $GP_JOB_DOCKER_IMAGE sleep ${GP_JOB_WALLTIME_SEC} `" 
+   CONTAINER_ID="`docker run -d --name $CONTAINER_NAME --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR --runtime=nvidia  -t $GP_JOB_DOCKER_IMAGE sleep ${GP_JOB_WALLTIME_SEC} `" 
 else 
-   CONTAINER_ID="`docker run -d --name $CONTAINER_NAME  --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR -t $GP_JOB_DOCKER_IMAGE sleep ${GP_JOB_WALLTIME_SEC}s `" 
+   CONTAINER_ID="`docker run -d --name $CONTAINER_NAME  --mount type=bind,src=$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR,dst=$GP_JOB_METADATA_DIR $MOUNT_STR --runtime=nvidia -t $GP_JOB_DOCKER_IMAGE sleep ${GP_JOB_WALLTIME_SEC}s `" 
    exit_code=$?
 fi
 
