@@ -65,20 +65,6 @@ if [ "xGP_MODULE_SPECIFIC_CONTAINER" = "x" ]; then
     echo "== no MODULE_SPECIFIC_CONTAINER specified. No caching of the container will be done at the end of the run "
 fi
 
-if [ $DEBUG_LEVEL -gt 0  ]; then
-###### print out the environment for later debugging	
-# Loop over each line from the env command
-# add the test to make it easier to search cloudwatch logs
-while read -r line; do
-  # Get the string before = (the var name)
-  name="${line%=*}"
-  eval value="\$$name"
-
-  echo "ENV VAR name: ${name}, value: ${value}"
-done <<EOF
-$(env)
-EOF
-fi
 
 
 ############################   finished getting all inputs ################################
@@ -105,24 +91,6 @@ aws s3 sync $AWS_S3_PREFIX$GP_JOB_METADATA_DIR $GP_LOCAL_PREFIX$GP_JOB_METADATA_
 echo "========== 2. chmodding $GP_JOB_METADATA_DIR from $PWD"
 chmod -R a+rwx $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR
 
-
-###################### TBD: load cached libraries for R modules ##########################
-#
-#   for this do a lookup given a GP_JOB_DOCKER_IMAGE name to a hard coded path on s3:/opt/gpbeta
-# where things were cached in earlier runs
-echo "========== 3. Load $MOD_LIB libraries"
-# bootstapping until all modules have unique fully-populated containers
-#  setup so the inner container loads R libraries, add a package load before the actual module call
-# and do the necessary S3 sync based on an environment variable
-if [ "x$MOD_LIBS_S3" = "x" ]; then
-    # Variable is empty
-    echo "========== no module libs to copy in "
-else
-    # copy in cached module libraries - this is only temporary
-    aws s3 sync $AWS_S3_PREFIX$MOD_LIBS_S3 $MOD_LIBS --quiet
-    ls -alrt $MOD_LIBS
-fi
-###################### END TBD: load cached libraries for R modules ##########################
 
 . $GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/$GP_AWS_SYNC_SCRIPT_NAME
 

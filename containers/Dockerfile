@@ -12,6 +12,7 @@ RUN apk update && \
         && \
     pip install --upgrade awscli==1.18.147 python-magic==0.4.18 && \
     pip install boto3==1.15.15 && \
+    rm -rf /root/.cache/pip && \
     apk -v --purge del py-pip && \
     rm /var/cache/apk/* && \
     chmod ugo+x /usr/local/bin/*.sh
@@ -19,5 +20,5 @@ RUN apk update && \
    
 COPY scripts/*.sh /usr/local/bin/
 COPY scripts/*.py /usr/local/bin/
-COPY scripts/*.R /usr/local/bin/
+
 

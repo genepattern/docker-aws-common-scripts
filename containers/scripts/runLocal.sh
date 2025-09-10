@@ -8,14 +8,20 @@ cd $GP_LOCAL_PREFIX$WORKING_DIR
 
 echo "========== runLocal.sh inside 1st container, runLocal.sh - running module now  ================="
 # +++ PULL IS NOW IN THE  resolveContainerNameToCacheOrNot.sh SCRIPT +++++
-
-. resolveContainerNameToCacheOrNot.sh 
+#. resolveContainerNameToCacheOrNot.sh 
+# for tfsites, don't pull if its already here so we save time.  Also skip all the ECR stuff
+if [ -z "$(docker images -q $GP_JOB_DOCKER_IMAGE)" ]; then
+    echo "Image $GP_JOB_DOCKER_IMAGE not present, pulling."
+    #docker images
+    
+    docker pull -q $GP_JOB_DOCKER_IMAGE
+else
+    echo "Image $GP_JOB_DOCKER_IMAGE already present, skipping pull."
+fi
 DOCKER_PULL_EXIT=$?
 
 echo " ### DOCKER PULL EXIT CODE $DOCKER_PULL_EXIT =="
 echo " ### docker = $GP_JOB_DOCKER_IMAGE "
-echo " ### ECR cache = $GP_MODULE_SPECIFIC_CONTAINER"
-echo " ### USE THIS = $CONTAINER_TO_USE"
 
 if [ $DOCKER_PULL_EXIT -eq 0  ]; then
 
@@ -153,26 +159,8 @@ fi
 # Try to log the case where a populated tasklib is already present inside the container
 #   - see if we can fail if it already exists and is populated
 #
-# docker exec $CONTAINER_ID ls -alrt  $GP_MODULE_DIR
-echo "--- copy in tasklib contents to $GP_MODULE_DIR"
-docker cp $GP_LOCAL_PREFIX$GP_MODULE_DIR/ $CONTAINER_ID:$GP_MODULE_DIR
-# docker exec $CONTAINER_ID ls -alrt  $GP_MODULE_DIR
 
-#
-# bootstrap package loading for old modules using shared containers
-#
-if [ -f "$GP_LOCAL_PREFIX$GP_MODULE_DIR/r.package.info" ]
-then
-        #echo "$GP_MODULE_DIR/r.package.info found.">$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/tedlog1.txt 
-        # docker exec $CONTAINER_ID  ls /build/source/installPackages.R
-	INSTALL_R_PRESENT = $?
-        if [ $INSTALL_R_PRESENT != 0 ]
-	then
-		docker cp /usr/local/bin/installPackages.R  $CONTAINER_ID:/build/source/installPackages.R
-		docker exec $CONTAINER_ID /usr/local/bin/installPackages.R $GP_MODULE_DIR/r.package.info
-        fi
-	docker exec $CONTAINER_ID Rscript /build/source/installPackages.R $GP_MODULE_DIR/r.package.info >$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/r.package.installs.out.txt 2>$GP_LOCAL_PREFIX$GP_JOB_METADATA_DIR/r.package.installs.err.txt
-fi
+
 
 # DEBUG LOOK AT FILE PERMISSIONS TO METADATA 
 #docker exec  -t $CONTAINER_ID ls -alrt $GP_JOB_METADATA_DIR/..
@@ -198,8 +186,6 @@ fi
 
 echo "======== runLocal: Module execution complete  ========"
 docker stop $CONTAINER_ID
-echo "Saving to ECR "
-/usr/local/bin/saveContainerInECR.sh
 
 # end block if DOCKER_PULL_EXIT eq 0
 fi
@@ -210,9 +196,15 @@ fi
 # containers we won't run again.  Maybe we should leave images as they might actually be reused
 # but not for now
 echo "=========== removing all exited containers =============="
+docker images
 docker ps -aq --no-trunc -f status=exited | xargs docker rm
-# and remove downloaded images to keep them from piling up
-docker image prune -a -f
+# and remove downloaded images other than genepattern/tfsites and genepattern/dind to keep them from piling up
+docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | \
+  grep -Ev '^(genepattern/tfsites|genepattern/dind)' | \
+  awk '{print $2}' | \
+  xargs -r docker rmi
+
+docker images
 
 return $DOCKER_PULL_EXIT
 if [ $DOCKER_PULL_EXIT -ne 0 ];then
